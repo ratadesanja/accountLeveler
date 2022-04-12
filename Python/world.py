@@ -137,14 +137,37 @@ def find_champion_pointers(mem, champion_names):
         try:
             o = read_object(mem, pointer)
         except (MemoryReadError, UnicodeDecodeError):
+            #print("MemoryReadError or UnicodeDecodeError")
             pass
         else:
             if o.name.lower() in champion_names:
                 champion_pointers.add(pointer)
+                #print("added ", pointer)
     assert len(champion_pointers) >= len(champion_names), "Only found %s champions, need %s" % (len(champion_pointers), len(champion_names))
     return champion_pointers
 
 #Rata
+def find_active_champion_pointer(mem, active_champion_name):
+    pointers = find_object_pointers(mem)
+    active_champion_pointer = None
+    for pointer in pointers:
+        try:
+            o = read_object(mem, pointer)
+        except (MemoryReadError, UnicodeDecodeError):
+            pass
+        else:
+            if o.name.lower() == active_champion_name.lower():
+                active_champion_pointer = pointer
+    return active_champion_pointer
+
+def find_active_champion_in_set(champions, active_champion_pointer):
+    for pointer in champions: 
+        if(pointer == active_champion_pointer):
+            return pointer
+        else:
+            continue
+
+
 def find_target_pointers(mem, target_names):
     pointers = find_object_pointers(mem)
     target_pointers = set()
@@ -195,8 +218,15 @@ def getPlayerGold(mem):
     print("Gold: ", gold)
     return gold
 
+#Rata
 def getHealthPercentage(health, maxHealth): 
         return (health / maxHealth) * 100
+
+#Rata
+def updateActiveChampion(mem, pointer):
+    #print("CHAMPION POINTER: ", pointer)
+    active_champion = read_object(mem, pointer)
+    return active_champion
 
 def find_local_net_id(mem):
     local_player = mem.read_uint(mem.base_address + constants.oLocalPlayer)
@@ -248,17 +278,3 @@ def world_to_screen(view_proj_matrix, width, height, x, y, z):
 
     return None, None
 
-
-def world_to_minimap(view_proj_matrix, width, height, x, y, z):
-    # pasted / translated world to screen math
-    clip_coords_x = x * view_proj_matrix[0] + y * view_proj_matrix[4] + z * view_proj_matrix[8] + view_proj_matrix[12]
-    clip_coords_y = x * view_proj_matrix[1] + y * view_proj_matrix[5] + z * view_proj_matrix[9] + view_proj_matrix[13]
-    clip_coords_w = x * view_proj_matrix[3] + y * view_proj_matrix[7] + z * view_proj_matrix[11] + view_proj_matrix[15]
-
-    M_x = clip_coords_x / clip_coords_w
-    M_y = clip_coords_y / clip_coords_w
-
-    out_x = (width / 2. * M_x) + (M_x + width / 2.)
-    out_y = -(height / 2. * M_y) + (M_y + height / 2.)
-
-    return out_x, out_y	

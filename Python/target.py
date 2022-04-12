@@ -1,4 +1,5 @@
 import math
+from world import updateActiveChampion
 
 
 def is_clone(target):
@@ -12,7 +13,7 @@ def is_alive(target):
 def hurtable(champion, target):
     return target.team != champion.team and target.targetable and is_alive(target) and target.visibility
 
-def monsterHurtable(champion, target):
+def monsterHurtable(target):
     return target.targetable and is_alive(target) and target.visibility
 
 
@@ -63,15 +64,16 @@ def select_lowest_target(stats, champion, entities):
 
     return target
 
-def select_closest_target(champion, entities, champion_names):
+def select_closest_target(active_champion, entities, champion_names):
     # todo: check if champion is stunned
     targets = []
     for entity in entities:
-        if monsterHurtable(champion, entity):
+        if monsterHurtable(entity):
             #if is_clone(entity):
             #    continue
             if(entity.name[0:4].lower() == "sru_"): 
-                if(abs(entity.x - champion.x) < 500 and abs(entity.y - champion.y) < 500 and not (entity.name in champion_names)):
+                
+                if(abs(entity.x - active_champion.x) < 500 and abs(entity.y - active_champion.y) < 500 and not (entity.name in champion_names)):
                     targets.append(entity)
-
+    
     return targets

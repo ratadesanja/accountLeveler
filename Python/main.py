@@ -1,7 +1,7 @@
 import time
 import keyboard
 from pymem import Pymem
-from world import find_champion_pointers, find_game_time, find_local_net_id, find_view_proj_matrix, read_object, world_to_screen, world_to_minimap, find_object_names, getPlayerGold
+from world import find_champion_pointers, find_game_time, find_local_net_id, find_view_proj_matrix, read_object, world_to_screen, find_object_names, getPlayerGold, find_active_champion_pointer, updateActiveChampion
 from champion_stats import ChampionStats
 from target import select_lowest_target
 from constants import PROCESS_NAME
@@ -32,7 +32,7 @@ def main():
     blueSide, redSide = jungle.jungleSetup()
     Side = redSide
     
-    junglingIterator = 3
+    junglingIterator = 4
     inventoryIndex = 1
 
     ShopItemList = shop.setupItems()
@@ -50,21 +50,31 @@ def main():
     key = keybinds()
 
     mem = Pymem(PROCESS_NAME)
-    print(mem.base_address)
+    #print(mem.base_address)
     champion_stats = ChampionStats()
     walker = Walker(mem)
     champion_pointers = find_champion_pointers(mem, champion_stats.names())
-    
-    #objectPointers = find_object_names(mem)
-    #objectNames = [read_object(mem, pointer) for pointer in objectPointers]
-        
+    print(champion_pointers)
+
+    print(champion_stats.names())
+
+    champions = [read_object(mem, pointer) for pointer in champion_pointers]
+    net_id_to_champion = {c.network_id: c for c in champions}
+    local_net_id = find_local_net_id(mem)
+    active_champion = net_id_to_champion[local_net_id]
+    active_champion_pointer= find_active_champion_pointer(mem, active_champion.name)
+    print(active_champion_pointer)
+
+    # while(True):
+    #     active_champion = updateActiveChampion(mem, active_champion_pointer)
+    #     print(active_champion.x, active_champion.y)
+    #     time.sleep(1)
+
     stopping = False
     once = True
-    while stopping == False:
-        champions = [read_object(mem, pointer) for pointer in champion_pointers]
-        net_id_to_champion = {c.network_id: c for c in champions}
-        local_net_id = find_local_net_id(mem)
-        active_champion = net_id_to_champion[local_net_id]
+    while stopping == False:       
+        active_champion = updateActiveChampion(mem, active_champion_pointer)
+
         view_proj_matrix, width, height = find_view_proj_matrix(mem)
         game_time = find_game_time(mem)
 
@@ -138,16 +148,16 @@ def main():
         if(active_champion.level > 2):
             #keyboard.press_and_release('y')
             while jungling:
-                jungle.pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, width, height, walker, champion_stats, active_champion, game_time)
-                lastLevel = levelup.tryToLevel(lastLevel, active_champion.level)
+                jungle.pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, width, height, walker, champion_stats, find_game_time(mem), mem, champion_pointers, active_champion_pointer)
+                lastLevel = levelup.tryToLevel(lastLevel, active_champion.level, levelingPath)
                 
                 if(Side == redSide and junglingIterator == 2):
                     junglingIterator = 3
                     walker.recall()
-                    check = walker.checkRecalled(mem, champion_pointers)
+                    check = walker.checkRecalled(mem, active_champion_pointer)
                     while(check == False):
                         walker.recall()
-                        check = walker.checkRecalled(mem, champion_pointers)
+                        check = walker.checkRecalled(mem, active_champion_pointer)
                         #if(active_champion.gold > 1):
                         #    time.sleep(10)
                     
@@ -201,6 +211,7 @@ def main():
         #         walker.walk(x, y, game_time)
 
         if(measure):
+            active_champion = updateActiveChampion(mem, active_champion_pointer)
             print(active_champion.x, active_champion.y, active_champion.z)
             time.sleep(0.5)
 

@@ -1,9 +1,8 @@
 import time
 import keyboard
 from pymem import Pymem
-from Rating.world import getHealthPercentage
 from target import select_closest_target, is_alive, monsterHurtable
-from world import find_champion_pointers, find_game_time, find_local_net_id, find_view_proj_matrix, read_object, world_to_screen, find_object_names, find_target_pointers, update_target_info
+from world import find_champion_pointers, find_game_time, find_local_net_id, find_view_proj_matrix, read_object, world_to_screen, find_object_names, find_target_pointers, update_target_info, getHealthPercentage, updateActiveChampion
 from champion_stats import ChampionStats
 from constants import PROCESS_NAME
 
@@ -38,15 +37,16 @@ def jungleSetup():
     return blueSide, redSide
 
 
-def getJunglePath(Side, view_proj_matrix, width, height, i):
+def getJunglePath(Side, i):
     pathing = [Side.bluebuff, Side.gromp, Side.wolves, None, Side.raptors, Side.redbuff, Side.krugs]
-    path = pathing[i]
+    if(pathing[i] == None):
+        path = pathing[i+1]
+    else:
+        path = pathing[i]
 
-    x, y = path[3], path[4]
-    #print(x, y)
     return path
 
-def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, width, height, walker, champion_stats, active_champion, game_time):  
+def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, width, height, walker, champion_stats, game_time, mem, champion_pointers, active_champion_pointer):  
     cameraLocked = True
     pathing = True
     last_pos = None
@@ -55,29 +55,27 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
     mem = Pymem(PROCESS_NAME)
     champion_pointers = find_champion_pointers(mem, champion_stats.names())
 
-    if(walker.checkRecalled(mem, champion_pointers)):
+    if(walker.checkRecalled(mem, active_champion_pointer)):
         junglingIterator = 0
         Side = blueSide
         clearing = False
     else: 
         clearing = True
 
-    path = getJunglePath(Side, view_proj_matrix, width, height, junglingIterator) #mejorar
-    pathX, pathY = path[3], path[4]
-    walker.walk(pathX, pathY, game_time)
+    path = getJunglePath(Side, junglingIterator)
+    pathX = path[3]
+    pathY = path[4]
+    walker.walk(pathX, pathY)
     
     if(cameraLocked == False):
             keyboard.press_and_release('y')
             cameraLocked = False
             
-    while(pathing == True and breaksafe != 5):
-        
+    while(pathing == True and breaksafe != 5):        
         champions = [read_object(mem, pointer) for pointer in champion_pointers]
-        net_id_to_champion = {c.network_id: c for c in champions}
-        local_net_id = find_local_net_id(mem)
-        active_champion = net_id_to_champion[local_net_id]
-        view_proj_matrix, width, height = find_view_proj_matrix(mem)
+        active_champion = updateActiveChampion(mem, active_champion_pointer)
         game_time = find_game_time(mem)
+        view_proj_matrix, width, height = find_view_proj_matrix(mem)
 
         pos = [active_champion.x, active_champion.y, active_champion.z, pathX, pathY]
         #print(pos)
@@ -99,7 +97,8 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
 
                 #if (getHealthPercentage(active_champion.health, active_champion.max_health) < 20):  #Continue
                 #    walker.recall()
-
+                active_champion = updateActiveChampion(mem, active_champion_pointer)
+                view_proj_matrix, width, height = find_view_proj_matrix(mem)
                 while(targetsLeftBool and not checkedThreeTimes):
 
                     try:
@@ -107,10 +106,10 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                         entities = [read_object(mem, pointer) for pointer in objectPointers]
                     except: 
                         print("no object pointers/entities")
-
+                    
                     targets = select_closest_target(active_champion, entities, champion_stats.names())
                     targetsLeft = len(targets) - 1
-                    #print("Targets left: ", targetsLeft)
+                    print("Targets left: ", targetsLeft)
                     if(targetsLeft == -1):
                         if(checkedThreeTimes == False):
                             if(checkedTimes < 3):
@@ -127,7 +126,7 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                         for target in targets:
                             targetNames.append(target.name)
                         #print("\n\n")
-                        #print(targetNames)
+                        print(targetNames)
                         
                         target_pointers, target_pointer_names = find_target_pointers(mem, targetNames)
                         #print(target_pointers, target_pointer_names)
@@ -144,9 +143,11 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                         targetX, targetY = world_to_screen(view_proj_matrix, width, height, target.x, target.z, target.y)
                         
                         #print("Clearing...")
-                        walker.walk(targetX, targetY, game_time)
+                        walker.walk(targetX, targetY)
+
                         if(active_champion.mana > 200):
-                            walker.cast(active_champion, targetX, targetY, 'q')
+                            time.sleep(0.15)
+                            walker.cast(active_champion_pointer, mem, find_game_time(mem), targetX, targetY, 'q')
 
                         monsterAlive = is_alive(target)
                         monsterHealth = target.health
@@ -157,7 +158,7 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                         while((monsterAlive == True) and (monsterHealth > 0.1) and (monsterHealthChecks < 3)):
                             print(monsterHealth)
                             if(monsterHealth == lastMonsterHealth and lastMonsterHealth != None):
-                                print("monsterHealthChecks:", monsterHealthChecks)
+                                #print("monsterHealthChecks:", monsterHealthChecks)
                                 monsterHealthChecks += 1
                             else:
                                 monsterHealthChecks = 0
@@ -170,7 +171,9 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                                 monsterHealth = updatedTarget.health
                                 
                                 updatedTargetX, updatedTargetY = world_to_screen(view_proj_matrix, width, height, updatedTarget.x, updatedTarget.z, updatedTarget.y)
-                                walker.walk(updatedTargetX, updatedTargetY, game_time)
+                                walker.walk(updatedTargetX, updatedTargetY)
+                                
+                                walker.cast(active_champion_pointer, mem,  find_game_time(mem), updatedTargetX, updatedTargetY, 'q')
 
                             except: 
                                 print("updateHealth bug")
@@ -205,7 +208,7 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                 pathing = False
 
         elif(pos == last_pos):    
-            walker.walk(pathX, pathY, game_time)
+            walker.walk(pathX, pathY)
             breaksafe += 1
             if(breaksafe == 5):
                 #print("BREAKING")

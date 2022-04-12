@@ -225,15 +225,15 @@ def gameStarted():
     if (pixelColor != px):
         pixelColor = px
 
-    print(checkX, checkY, " - ", pixelColor, px)
+    #print(checkX, checkY, " - ", pixelColor, px)
 
     time.sleep(0.5)
     #print(pixelColor)
     if(pixelColor == (31, 133, 247)): #(31, 133, 247) #(17, 112, 237)
-        print("True")
+        #print("True")
         return True
     else: 
-        print("False")
+        #print("False")
         return False
 
 
