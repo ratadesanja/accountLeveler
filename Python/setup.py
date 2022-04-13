@@ -70,7 +70,7 @@ class Client(object):
         championSelectPopped = False
         while(not queuePopped):
             print("Waiting...")
-            queuePopped = queuePop(Client.dc)
+            queuePopped = queuePop()
             
             time.sleep(delay)
 
@@ -80,7 +80,7 @@ class Client(object):
 
         for i in range(35):
             if(championSelectPopped == False):
-                championSelectPopped = championSelectPop(Client.dc)
+                championSelectPopped = championSelectPop()
                 time.sleep(delay/2)
 
 
@@ -286,8 +286,8 @@ def main():
         #checkX = int((Client.width / 100) * 93.98)
         #checkY = int((Client.height / 100) * 94.86)
         #print(checkX, checkY)
-        #Client.QueueUp(Client)
-        pickChampion()
+        Client.QueueUp(Client)
+        #pickChampion()
 
         time.sleep(15)
         Game.windowName = "League of Legends (TM) Client" 

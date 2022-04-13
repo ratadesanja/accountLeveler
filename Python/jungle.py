@@ -52,8 +52,8 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
     last_pos = None
     breaksafe = 0
     
-    mem = Pymem(PROCESS_NAME)
-    champion_pointers = find_champion_pointers(mem, champion_stats.names())
+    #mem = Pymem(PROCESS_NAME)
+    #champion_pointers = find_champion_pointers(mem, champion_stats.names())
 
     if(walker.checkRecalled(mem, active_champion_pointer)):
         junglingIterator = 0
@@ -66,6 +66,8 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
     pathX = path[3]
     pathY = path[4]
     walker.walk(pathX, pathY)
+    
+    active_champion = updateActiveChampion(mem, active_champion_pointer)
     
     if(cameraLocked == False):
             keyboard.press_and_release('y')
@@ -132,7 +134,7 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                             for target in targets:
                                 targetNames.append(target.name)
                             #print("\n\n")
-                            print(targetNames)
+                            #print(targetNames)
                             
                             target_pointers, target_pointer_names = find_target_pointers(mem, targetNames)
                             #print(target_pointers, target_pointer_names)
@@ -170,10 +172,11 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                             monsterHealthChecks = 0
                             #temp, target_pointer_updated = find_target_pointers(mem, targetNames) #sleepy
                             while((monsterAlive == True) and (monsterHealth > 0.1) and (monsterHealthChecks < 3)):
-                                #print(monsterHealth)
+                                print(monsterHealth)
                                 if(monsterHealth == lastMonsterHealth and lastMonsterHealth != None):
-                                    #print("monsterHealthChecks:", monsterHealthChecks)
+                                    print("monsterHealthChecks:", monsterHealthChecks)
                                     monsterHealthChecks += 1
+                                    time.sleep(0.1)
                                 else:
                                     monsterHealthChecks = 0
                                     
@@ -208,8 +211,8 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
 
                             # targets = select_closest_target(active_champion, entities, champion_stats.names())
                             # targetsLeft = len(targets) - 1
-
-                            print(target.name + " cleared")
+                            if(monsterAlive == False):
+                                print(target.name + " cleared")
                             time.sleep(0.1)
                     pathing = False
                     print("")

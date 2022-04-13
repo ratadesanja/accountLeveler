@@ -51,17 +51,24 @@ def main():
     mem = Pymem(PROCESS_NAME)
     #print(mem.base_address)
     champion_stats = ChampionStats()
+    print(champion_stats.names())
     walker = Walker(mem)
+
+    # ptr = find_active_champion_pointer(mem, "warwick")
+    # print(read_object(mem, ptr))
+
+    # time.sleep(20)
+
     champion_pointers = find_champion_pointers(mem, champion_stats.names())
     print(champion_pointers)
-
-    print(champion_stats.names())
 
     champions = [read_object(mem, pointer) for pointer in champion_pointers]
     net_id_to_champion = {c.network_id: c for c in champions}
     local_net_id = find_local_net_id(mem)
     active_champion = net_id_to_champion[local_net_id]
     active_champion_pointer= find_active_champion_pointer(mem, active_champion.name)
+
+    print(active_champion)
     print(active_champion_pointer)
 
     gameEndedCheck = checkIfGameEnded(mem, active_champion_pointer)
@@ -94,6 +101,7 @@ def main():
                 print("reading inputs")
                 once = False
 
+            active_champion = updateActiveChampion(mem, active_champion_pointer)
             lastLevel = levelup.tryToLevel(lastLevel, active_champion.level, levelingPath)
 
             if(active_champion.level > 3):
@@ -152,13 +160,18 @@ def main():
 
             time.sleep(0.01)
 
-        if(gameEndedCheckTimes > 7):
-            print("GAME ENDED")
-            gameEnded = True
-        else: 
-            time.sleep(1)
-            gameEndedCheck = checkIfGameEnded(mem, active_champion_pointer)
-            gameEndedCheckTimes += 1
+        while(gameEndedCheck == True):
+
+            print(gameEndedCheckTimes)
+
+            if(gameEndedCheckTimes > 4):
+                print("GAME ENDED")
+                gameEnded = True
+                break
+            else: 
+                time.sleep(1)
+                gameEndedCheck = checkIfGameEnded(mem, active_champion_pointer)
+                gameEndedCheckTimes += 1
     print("now what......")
 
     

@@ -5,7 +5,7 @@ from pymem.exception import MemoryReadError
 from collections import namedtuple, defaultdict
 from utils import bool_from_buffer, double_from_buffer, float_from_buffer, int_from_buffer, linked_insert, Node
 
-Object = namedtuple('Object', 'name, ability_power, armor, attack_range, attack_speed_multiplier, base_attack, bonus_attack, health, network_id, magic_resist, mana, max_health, size_multiplier, x, y, z, level, team, spawn_count, targetable, visibility, spells, buffs')
+Object = namedtuple('Object', 'name, ability_power, armor, attack_range, attack_speed_multiplier, base_attack, bonus_attack, health, network_id, magic_resist, mana, max_health, size_multiplier, x, y, z, level, team, spawn_count, targetable, visibility, invulnerable, spells, buffs')
 Spells = namedtuple('Spells', 'Q, W, E, R, D, F')
 Spell = namedtuple('Spell', 'level, cooldown_expire')
 Buff = namedtuple('Buff', 'name, count, end_time')
@@ -60,7 +60,6 @@ def read_spells(mem, spell_addresses_pointer):
 
 def read_object(mem, address):
     data = mem.read_bytes(address, constants.OBJECT_SIZE)
-    #print(address)
 
     params = {}
     params['name'] = mem.read_string(int_from_buffer(data, constants.oObjectName), 50)
@@ -86,6 +85,7 @@ def read_object(mem, address):
 
     params['targetable'] = bool_from_buffer(data, constants.oObjectTargetable)
     params['visibility'] = bool_from_buffer(data, constants.oObjectVisibility)
+    params['invulnerable'] = bool_from_buffer(data, constants.oObjectInvulnerable)
 
     spell_pointers_address = int_from_buffer(data, constants.oObjectSpellBook)
     params['spells'] = read_spells(mem, spell_pointers_address)
@@ -94,7 +94,7 @@ def read_object(mem, address):
     buffs_end = int_from_buffer(data, constants.oObjectBuffManagerEntriesEnd)
 
     params['buffs'] = read_buffs(mem, buffs_start, buffs_end)
-
+    
     return Object(**params)
 
 
@@ -157,7 +157,7 @@ def find_active_champion_pointer(mem, active_champion_name):
         except (MemoryReadError, UnicodeDecodeError):
             pass
         else:
-            if o.name.lower() == active_champion_name.lower():
+            if o.name.lower() == active_champion_name.lower(): 
                 active_champion_pointer = pointer
     return active_champion_pointer
 
@@ -232,7 +232,7 @@ def updateActiveChampion(mem, pointer):
 #Rata
 def checkIfGameEnded(mem, active_champion_pointer):
     active_champion = updateActiveChampion(mem, active_champion_pointer)
-    if(active_champion.spawn_count % 2 == 0) and (active_champion.targetable == False) and (active_champion.visibility == True):
+    if(active_champion.spawn_count % 2 == 0) and (active_champion.targetable == False) and (active_champion.visibility == True) and (active_champion.invulnerable == True):
         print("GameEndedCheck = True")
         return True 
     else:

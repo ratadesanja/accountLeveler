@@ -14,7 +14,10 @@ def clean_champion_name(name):
 
 class ChampionStats():
     def __init__(self):
+        file = open("game_data.txt", "a")
         game_data = requests.get(GAME_DATA_ENDPOINT, verify=False).json()
+        file.write(str(game_data) + "\n\n")
+        file.close()
         champion_names = [clean_champion_name(player['rawChampionName']) for player in game_data['allPlayers']]
         self.champion_data = {}
         for champion in champion_names:
