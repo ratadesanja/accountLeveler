@@ -1,3 +1,4 @@
+from re import A
 import constants
 import numpy as np
 from pymem.exception import MemoryReadError
@@ -42,7 +43,7 @@ def read_spell(mem, spell_address):
     data = mem.read_bytes(spell_address, constants.SPELL_SIZE)
     level = int_from_buffer(data, constants.oSpellSlotLevel)
     #cooldown_expire = double_from_buffer(data, constants.oSpellSlotCooldownExpire)
-    cooldown_expire = float_from_buffer(data, constants.oSpellSlotCooldownExpire) - find_game_time(mem) * 0.9
+    cooldown_expire = float_from_buffer(data, constants.oSpellSlotCooldownExpire) #- find_game_time(mem) * 0.9
     #cooldown_expire = int_from_buffer(data, constants.oSpellSlotCooldownExpire)
     return Spell(level, cooldown_expire)
 
@@ -227,6 +228,15 @@ def updateActiveChampion(mem, pointer):
     #print("CHAMPION POINTER: ", pointer)
     active_champion = read_object(mem, pointer)
     return active_champion
+
+#Rata
+def checkIfGameEnded(mem, active_champion_pointer):
+    active_champion = updateActiveChampion(mem, active_champion_pointer)
+    if(active_champion.spawn_count % 2 == 0) and (active_champion.targetable == False) and (active_champion.visibility == True):
+        print("GameEndedCheck = True")
+        return True 
+    else:
+        return False
 
 def find_local_net_id(mem):
     local_player = mem.read_uint(mem.base_address + constants.oLocalPlayer)

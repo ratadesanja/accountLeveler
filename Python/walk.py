@@ -2,11 +2,13 @@ import time
 import mouse
 import keyboard
 from pymem import Pymem
-from world import find_game_time, updateActiveChampion
+from world import find_game_time, updateActiveChampion, getHealthPercentage, getPlayerGold
 from champion_stats import ChampionStats
 from constants import PROCESS_NAME
 
 from win32gui import GetWindowText, GetForegroundWindow
+
+import shop
 
 class Walker:
     def __init__(self, mem):
@@ -32,7 +34,6 @@ class Walker:
         active_champion = updateActiveChampion(mem, active_champion_pointer)
         spellIndex = None 
         spellOffCooldown = None 
-        spellManaCost = None
 
         if spell == 'q':
                 spellIndex = 0
@@ -47,37 +48,65 @@ class Walker:
         elif spell == 'f':
                 spellIndex = 5
 
+        spellManaCost = 50 + (10 * (active_champion.spells[spellIndex].level - 1))
 
-        if(active_champion.mana > 90):
-            time.sleep(0.15)
+        if(active_champion.mana > spellManaCost and getHealthPercentage(active_champion.health, active_champion.max_health) < 50):
 
-        #active_champion.spells[spellIndex[1]] <= game_time:
-        #    spellOffCooldown = True
-        if(active_champion.spells[spellIndex].cooldown_expire - game_time <= 0):
-            spellOffCooldown = True
+            if(active_champion.spells[spellIndex].cooldown_expire - find_game_time(mem) <= 0):
+                spellOffCooldown = True
 
-        else:
-            spellOffCooldown = False
-
-        print("Spell off cooldown: ", spellOffCooldown)
-        print(active_champion.spells[spellIndex], "\n")
-        
-        if x is not None and y is not None:
-            if(spellOffCooldown == True):
-                stored_x, stored_y = mouse.get_position()
-                mouse.move(int(x), int(y))
-                keyboard.press(spell)
-                print(spell)
-                time.sleep(0.07)
-                keyboard.release(spell)
-                mouse.move(stored_x, stored_y)
+            else:
+                spellOffCooldown = False
+            
+            if x is not None and y is not None:
+                if(spellOffCooldown == True):
+                    stored_x, stored_y = mouse.get_position()
+                    mouse.move(int(x), int(y))
+                    keyboard.press(spell)
+                    time.sleep(0.07)
+                    keyboard.release(spell)
+                    mouse.move(stored_x, stored_y)
+                    print("Casted ", spell)
 
     
-    def recall(self):
+    @staticmethod
+    def castRecall():
         keyboard.press_and_release('b')
         print("Recalling")
         time.sleep(8.5)
         time.sleep(0.5)
+
+    @staticmethod
+    def recall(mem, active_champion_pointer, ShopItemList, inventoryIndex):
+        check = Walker.checkRecalled(mem, active_champion_pointer)
+        while(check == False):
+            Walker.castRecall()
+            check = Walker.checkRecalled(mem, active_champion_pointer)
+
+
+        time.sleep(0.25)
+        ShopOpen = False
+
+        buying = True
+        print("Buying...")
+        while(buying):
+            if(inventoryIndex < 6):
+                if(getPlayerGold(mem) > ShopItemList[inventoryIndex].cost):
+                    inventoryIndex, ShopOpen = shop.buyItem(ShopItemList, inventoryIndex, ShopOpen)
+                    #print(inventoryIndex)
+                    inventoryIndex += 1
+
+                    time.sleep(0.25)
+
+                else: 
+                    buying = False
+            else: 
+                buying = False
+                
+        if(ShopOpen == True):
+            keyboard.press_and_release('p')
+            ShopOpen = False
+        return inventoryIndex
         
 
     @staticmethod

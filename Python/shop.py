@@ -52,6 +52,11 @@ def buyItem(itemList, index, ShopOpen):
         keyboard.press_and_release('p')
         ShopOpen = True
 
+        time.sleep(0.15)
+        x, y = getXYPos(45.83, 19.63, False)
+        autoit.mouse_click("left", x, y, 1)
+        time.sleep(0.15)
+
     time.sleep(0.15)
     autoit.mouse_click("right", itemList[index].x, itemList[index].y, 1)
     time.sleep(0.15)
