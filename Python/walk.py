@@ -103,6 +103,7 @@ class Walker:
             else: 
                 buying = False
                 
+        time.sleep(0.25)
         if(ShopOpen == True):
             keyboard.press_and_release('p')
             ShopOpen = False

@@ -17,11 +17,21 @@ import random
 from setup import Client
 import shop
 import levelup
-    
+
+import win32gui
+import win32api
+import win32con
+import win32process
+
+import os
+from datetime import datetime
     
 
 def setup(): 
     client = Client()
+    if(client.handle != None):
+        client.PlayGame()
+
     time.sleep(2)
     keyboard.press_and_release('y')
     
@@ -68,7 +78,6 @@ def main():
     active_champion = net_id_to_champion[local_net_id]
     active_champion_pointer= find_active_champion_pointer(mem, active_champion.name)
 
-    print(active_champion)
     print(active_champion_pointer)
 
     gameEndedCheck = checkIfGameEnded(mem, active_champion_pointer)
@@ -80,8 +89,8 @@ def main():
     while gameEnded == False:
         while gameEndedCheck == False:
             gameEndedCheckTimes = 0
-            active_champion = updateActiveChampion(mem, active_champion_pointer)
             gameEndedCheck = checkIfGameEnded(mem, active_champion_pointer)
+            active_champion = updateActiveChampion(mem, active_champion_pointer)
 
             view_proj_matrix, width, height = find_view_proj_matrix(mem)
             game_time = find_game_time(mem)
@@ -101,7 +110,6 @@ def main():
                 print("reading inputs")
                 once = False
 
-            active_champion = updateActiveChampion(mem, active_champion_pointer)
             lastLevel = levelup.tryToLevel(lastLevel, active_champion.level, levelingPath)
 
             if(active_champion.level > 3):
@@ -174,12 +182,89 @@ def main():
                 gameEndedCheckTimes += 1
     print("now what......")
 
+def goToLobby():
+    #time.sleep(10)
+    windowName = "League of Legends"
+    handle = 0
+    while(handle == 0):
+        handle = win32gui.FindWindow(None, windowName)
+
+    print("Client found: ", handle)
+    t, p = win32process.GetWindowThreadProcessId(handle)
+    print("Client process id: ", p)
+
+    time.sleep(1)
+    newClient = Client()
     
+    print("Closing Client")
+    try:
+        handle = win32api.OpenProcess(win32con.PROCESS_TERMINATE, 0, p)
+        if handle:
+            win32api.TerminateProcess(handle,0)
+            win32api.CloseHandle(handle)
+    except:
+        pass
+
+    time.sleep(1)
+    print("Opening Client")
+
+    #os.system('cmd /c \"T:\\Riot Games\\League of Legends\\LeagueClient.exe --locale=en_US\"')
+
+    time.sleep(3)
+
+
+
+    looping = True
+    print("")
+    while(looping):
+        time.sleep(0.5)
+        #try:
+        newClient.getDC()
+
+        checkX = int((newClient.width / 100) * 34.84)
+        checkY = int((newClient.height / 100) * 95.13)
+
+        px = newClient.dc.GetPixel(checkX, checkY)
+        pixelColor = []
+        r = px & 0xff
+        g = px >> 8 & 0xff
+        b = px >> 16 & 0xff
+
+        if (not(pixelColor == [r, g, b])):
+            pixelColor = [r, g, b]
+
+        print(checkX, checkY, " - ", pixelColor)
+
+        if(pixelColor == [205, 190, 145]):
+            looping = False
+        #except:
+            #print("Pass")
+            #pass
+    
+    time.sleep(1)
+
+    newClient.Click(newClient.Buttons.Cancel[0], newClient.Buttons.Cancel[1])
+
+    time.sleep(2)
+
+def gamingLoop():
+    games_played = 0
+    while(games_played < 2):
+        setup()
+        main()
+        games_played += 1
+        goToLobby()
+    
+    now = datetime.now()
+    file = open('bot_log.txt', 'a')
+    file.write(now.strftime("%d/%m/%Y") + "  -  Games played: " + str(games_played) + "\n")
+    file.close()
 
 if __name__ == '__main__':    
     s = random.randint(10, 35)
     windowName = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(s))
     ctypes.windll.kernel32.SetConsoleTitleW(windowName)
     time.sleep(1)
-    setup()
-    main()
+
+    gamingLoop()
+    #goToLobby()

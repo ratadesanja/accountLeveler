@@ -150,70 +150,73 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
                             target_pointer = target_pointers[index]
 
                             targetX, targetY = world_to_screen(view_proj_matrix, width, height, target.x, target.z, target.y)
-                            
-                            #print("Clearing...")
-                            walker.walk(targetX, targetY)
 
-                            
+
                             if(getHealthPercentage(active_champion.health, active_champion.max_health) < 15):
                                 healthy = False
+                                print("Healthy")
                             else: 
                                 healthy = True
-
-
-                            if(active_champion.mana > 200):
-                                time.sleep(0.15)
-                                walker.cast(active_champion_pointer, mem, find_game_time(mem), targetX, targetY, 'q')
-
-                            monsterAlive = is_alive(target)
-                            monsterHealth = target.health
-
-                            lastMonsterHealth = 999999
-                            monsterHealthChecks = 0
-                            #temp, target_pointer_updated = find_target_pointers(mem, targetNames) #sleepy
-                            while((monsterAlive == True) and (monsterHealth > 0.1) and (monsterHealthChecks < 3)):
-                                print(monsterHealth)
-                                if(monsterHealth == lastMonsterHealth and lastMonsterHealth != None):
-                                    print("monsterHealthChecks:", monsterHealthChecks)
-                                    monsterHealthChecks += 1
-                                    time.sleep(0.1)
-                                else:
-                                    monsterHealthChecks = 0
-                                    
-                                time.sleep(1)
-                                lastMonsterHealth = monsterHealth
-                                try:
-                                    updatedTarget = update_target_info(mem, target_pointer)
-                                    monsterAlive = is_alive(updatedTarget)
-                                    monsterHealth = updatedTarget.health
-                                    
-                                    updatedTargetX, updatedTargetY = world_to_screen(view_proj_matrix, width, height, updatedTarget.x, updatedTarget.z, updatedTarget.y)
-                                    walker.walk(updatedTargetX, updatedTargetY)
-                                    
-                                    walker.cast(active_champion_pointer, mem,  find_game_time(mem), updatedTargetX, updatedTargetY, 'q')
-
-                                except: 
-                                    print("updateHealth bug")
-                                    print(target_pointer, " - ", target_pointers)
-                                    monsterHealthChecks += 3
-                                #print(updatedTarget.health)
-                                if(monsterHealth < 0.1):
-                                    monsterAlive = False
-
-                            if(monsterHealthChecks == 4):
-                                print("monsterHealthCheck bug")
-
-                            checkedTimes = 0
                             
-                            
-                            # objectPointers = find_object_names(mem)
-                            # entities = [read_object(mem, pointer) for pointer in objectPointers]
+                                #print("Clearing...")
+                                walker.walk(targetX, targetY)
 
-                            # targets = select_closest_target(active_champion, entities, champion_stats.names())
-                            # targetsLeft = len(targets) - 1
-                            if(monsterAlive == False):
-                                print(target.name + " cleared")
-                            time.sleep(0.1)
+                                
+
+
+                                if(active_champion.mana > 200):
+                                    time.sleep(0.15)
+                                    walker.cast(active_champion_pointer, mem, find_game_time(mem), targetX, targetY, 'q')
+
+                                monsterAlive = is_alive(target)
+                                monsterHealth = target.health
+
+                                lastMonsterHealth = 999999
+                                monsterHealthChecks = 0
+                                #temp, target_pointer_updated = find_target_pointers(mem, targetNames) #sleepy
+                                while((monsterAlive == True) and (monsterHealth > 0.1) and (monsterHealthChecks < 3)):
+                                    print(monsterHealth)
+                                    if(monsterHealth == lastMonsterHealth and lastMonsterHealth != None):
+                                        print("monsterHealthChecks:", monsterHealthChecks)
+                                        monsterHealthChecks += 1
+                                        time.sleep(0.1)
+                                    else:
+                                        monsterHealthChecks = 0
+                                        
+                                    time.sleep(1)
+                                    lastMonsterHealth = monsterHealth
+                                    try:
+                                        updatedTarget = update_target_info(mem, target_pointer)
+                                        monsterAlive = is_alive(updatedTarget)
+                                        monsterHealth = updatedTarget.health
+                                        
+                                        updatedTargetX, updatedTargetY = world_to_screen(view_proj_matrix, width, height, updatedTarget.x, updatedTarget.z, updatedTarget.y)
+                                        walker.walk(updatedTargetX, updatedTargetY)
+                                        
+                                        walker.cast(active_champion_pointer, mem,  find_game_time(mem), updatedTargetX, updatedTargetY, 'q')
+
+                                    except: 
+                                        #print("updateHealth bug")
+                                        #print(target_pointer, " - ", target_pointers)
+                                        monsterHealthChecks += 3
+                                    #print(updatedTarget.health)
+                                    if(monsterHealth < 0.1):
+                                        monsterAlive = False
+
+                                if(monsterHealthChecks == 4):
+                                    print("monsterHealthCheck bug")
+
+                                checkedTimes = 0
+                                
+                                
+                                # objectPointers = find_object_names(mem)
+                                # entities = [read_object(mem, pointer) for pointer in objectPointers]
+
+                                # targets = select_closest_target(active_champion, entities, champion_stats.names())
+                                # targetsLeft = len(targets) - 1
+                                if(monsterAlive == False):
+                                    print(target.name + " cleared")
+                                time.sleep(0.1)
                     pathing = False
                     print("")
                     if(cameraLocked == False):
@@ -235,6 +238,12 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
             time.sleep(0.33)
             last_pos = pos
         else:
+
+            print("LOW ON HEALTH")
+
+            walker.walk(1660, 1061)
+
+            time.sleep(5)
             
             check = walker.checkRecalled(mem, active_champion_pointer)
             while(check == False):
@@ -249,5 +258,3 @@ def pathToCamps(Side, redSide, blueSide, junglingIterator, view_proj_matrix, wid
             
             healthy = True
         time.sleep(0.1)
-
-#def clearCamp(walker, targetX, targetY, target, game_time, active_champion):
